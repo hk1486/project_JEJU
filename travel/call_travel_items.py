@@ -1,6 +1,5 @@
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, APIRouter
-from pydantic import BaseModel
 import os
 from sshtunnel import SSHTunnelForwarder
 import pymysql
@@ -21,16 +20,8 @@ MYSQL_USERNAME = os.getenv('MYSQL_USERNAME')
 MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD')
 MYSQL_DATABASE = os.getenv('MYSQL_DATABASE')
 
-
-# Pydantic 모델 정의
-class UserInfo(BaseModel):
-    id: int
-    nickname: str
-
-
-# 데이터 삽입 엔드포인트
-@router.post("/user_info")
-async def create_user_info(user_info: UserInfo):
+@router.get("/travel")
+async def read_travel_items():
     try:
         with SSHTunnelForwarder(
                 (SSH_HOSTNAME, SSH_PORT),
@@ -48,12 +39,20 @@ async def create_user_info(user_info: UserInfo):
             )
 
             with connection.cursor() as cursor:
-                add_user = "INSERT INTO user_info (id, nickname) VALUES (%s, %s)"
-                cursor.execute(add_user, (user_info.id, user_info.nickname))
-                connection.commit()
+                query = """
+                        SELECT title, firstimage, summary
+                        FROM culture_main
+                        WHERE cat3 = '박물관' AND firstimage != ''
+                        """
+                cursor.execute(query)
+                results = cursor.fetchall()
 
             connection.close()
-            return {"message": "User info inserted successfully."}
+
+            if results:
+                return [{"title": row[0], "thumbnail": row[1], "description": row[2]} for row in results]
+            else:
+                raise HTTPException(status_code=404, detail="No data found")
 
     except pymysql.MySQLError as err:
         raise HTTPException(status_code=500, detail=str(err))

@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="/opt/homebrew/anaconda3" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="projectJeju" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Jeju" project-jdk-type="Python SDK" />
 </project>
