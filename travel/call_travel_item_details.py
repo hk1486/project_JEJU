@@ -68,6 +68,55 @@ def get_info_by_id(table, column, search_id):
         print(f"Error: {e}")
         return None
 
+
+def get_random_rows(target_table, category, contentid):
+    recomm_query = f"""
+    SELECT contentid, title, cat3, address, firstimage
+    FROM {target_table}
+    WHERE cat3 = '{category}'  -- 카테고리 값을 문자열로 취급
+    AND contentid != {contentid}
+    ORDER BY RAND()
+    LIMIT 5;
+    """
+
+    try:
+        # MySQL에 직접 연결
+        connection = pymysql.connect(
+            host=MYSQL_HOSTNAME,
+            port=MYSQL_PORT,
+            user=MYSQL_USERNAME,
+            password=MYSQL_PASSWORD,
+            database=MYSQL_DATABASE
+        )
+
+        try:
+            # 쿼리를 실행하고 DataFrame으로 반환
+            df = pd.read_sql(recomm_query, connection)
+
+            # JSON 응답 생성
+            if df.empty:
+                # 결과가 없으면 None 반환
+                json_output = {"result": None}
+            else:
+                # 결과가 있으면 DataFrame을 JSON으로 변환
+                json_output = {
+                    "result": json.loads(df.to_json(orient='records', force_ascii=False))
+                }
+
+            return json_output
+
+        except Exception as e:
+            print(f"Error executing query: {str(e)}")
+            return {"result": None}
+
+        finally:
+            # MySQL 연결 해제
+            connection.close()
+
+    except Exception as e:
+        print(f"Error connecting to MySQL: {str(e)}")
+        return {"result": None}
+
 @router.get("/details/{contentid}")
 async def read_main_items(contentid: int):
     """
@@ -110,8 +159,12 @@ async def read_main_items(contentid: int):
 
             df_detail = df_detail.merge(df_pet, on='contentid')
 
+        category = df_detail['cat3'].values[0]
+        recommend_result = get_random_rows(target_table, category, contentid)
+
         json_output = {
-            "result": json.loads(df_detail.to_json(orient='records', force_ascii=False))
+            "result": json.loads(df_detail.to_json(orient='records', force_ascii=False)),
+            "recommend": recommend_result
         }
 
         return JSONResponse(content=json_output)
