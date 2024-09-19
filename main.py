@@ -5,6 +5,7 @@ from login.insert_user_info import router as user_info_router
 from onboarding.onboarding_user_info import router as receive_onboarding_info
 from login.select_user_id import router as login
 from travel.call_main_page_items import router as main_layout
+from travel.call_travel_item_details import router as details_layout
 
 app = FastAPI()
 
@@ -14,6 +15,7 @@ app.include_router(login, prefix="/jeju")
 # app.include_router(culture_info_router, prefix="/jeju")
 
 app.include_router(main_layout, prefix="/jeju")
+app.include_router(details_layout, prefix="/jeju")
 app.include_router(receive_onboarding_info, prefix="/jeju")
 
 if __name__ == "__main__":
