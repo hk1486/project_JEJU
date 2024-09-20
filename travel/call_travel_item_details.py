@@ -22,7 +22,7 @@ MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD')
 MYSQL_DATABASE = os.getenv('MYSQL_DATABASE')
 
 
-def connect_mysql(query):
+def connect_mysql(query, params=None):
     try:
         connection = pymysql.connect(
             host=MYSQL_HOSTNAME,
@@ -32,7 +32,7 @@ def connect_mysql(query):
             database=MYSQL_DATABASE
         )
         # 쿼리를 실행하여 데이터를 가져오기
-        df = pd.read_sql(query, connection)
+        df = pd.read_sql(query, connection, params=params)
         return df
 
     except Exception as e:
@@ -69,12 +69,13 @@ def get_info_by_id(table, column, search_id):
         return None
 
 
+
 def get_random_rows(target_table, category, contentid):
     recomm_query = f"""
     SELECT contentid, title, cat3, address, firstimage
     FROM {target_table}
-    WHERE cat3 = '{category}'  -- 카테고리 값을 문자열로 취급
-    AND contentid != {contentid}
+    WHERE cat3 = %s
+    AND contentid != %s
     ORDER BY RAND()
     LIMIT 5;
     """
@@ -91,7 +92,7 @@ def get_random_rows(target_table, category, contentid):
 
         try:
             # 쿼리를 실행하고 DataFrame으로 반환
-            df = pd.read_sql(recomm_query, connection)
+            df = pd.read_sql(recomm_query, connection, params=(category, contentid))
 
             # JSON 응답 생성
             if df.empty:
@@ -118,57 +119,77 @@ def get_random_rows(target_table, category, contentid):
         return {"result": None}
 
 @router.get("/details/{contentid}")
-async def read_main_items(contentid: int):
+async def read_main_items(contentid: int, user_id: int):
     """
-    contentid를 인자로 받아 DB에서 정보를 조회한 후 JSON 응답으로 반환
+    contentid와 user_id를 인자로 받아 DB에서 정보를 조회한 후 JSON 응답으로 반환
     """
     try:
-        query = f"""SELECT target_table 
-                    FROM main_total_v2 
-                    WHERE contentsid = {contentid}"""
+        # 1. 대상 테이블 이름 가져오기
+        query = """SELECT target_table 
+                       FROM main_total_v2 
+                       WHERE contentsid = %s"""
+        df_target_table = connect_mysql(query, params=(contentid,))
 
-        df_target_table = connect_mysql(query)
+        if df_target_table.empty:
+            raise HTTPException(status_code=404, detail="Content not found")
 
         target_table = df_target_table['target_table'].values[0]
 
+        # 2. 세부 정보 가져오기
         detail_info_query = f"""SELECT * 
-                                FROM {target_table}
-                                WHERE contentid = {contentid}"""
+                                    FROM {target_table}
+                                    WHERE contentid = %s"""
+        df_detail = connect_mysql(detail_info_query, params=(contentid,))
 
-        df_detail = connect_mysql(detail_info_query)
+        if df_detail.empty:
+            raise HTTPException(status_code=404, detail="Content details not found")
 
         df_detail = df_detail.replace({'': np.nan, ' ': np.nan})
         df_detail['cat2'] = target_table
 
-        # 예시로 호출
+        # 3. 펫 정보 확인 및 병합
         table_name = 'pet_total'
         column_name = 'contentid'
 
-        # 함수 호출
         df_pet_target_table = get_info_by_id(table_name, column_name, contentid)
 
         if df_pet_target_table is not None and not df_pet_target_table.empty:
             pet_target_table = df_pet_target_table['target_table'].values[0]
 
             get_pet_info = f"""SELECT * 
-                                FROM {pet_target_table} 
-                                WHERE contentid = {contentid}"""
-
-            df_pet = connect_mysql(get_pet_info)
+                                   FROM {pet_target_table} 
+                                   WHERE contentid = %s"""
+            df_pet = connect_mysql(get_pet_info, params=(contentid,))
 
             df_pet = df_pet.replace({'': np.nan, ' ': np.nan})
 
-            df_detail = df_detail.merge(df_pet, on='contentid')
+            df_detail = df_detail.merge(df_pet, on='contentid', how='left')
 
+        # 4. 좋아요 상태 확인
+        like_check_query = """
+                SELECT EXISTS(
+                    SELECT 1 FROM likes
+                    WHERE userId = %s AND contentId = %s
+                ) AS is_liked
+                """
+        df_like = connect_mysql(like_check_query, params=(user_id, contentid))
+
+        is_liked = bool(df_like['is_liked'].values[0])
+
+        # 5. 추천 정보 가져오기
         category = df_detail['cat3'].values[0]
         recommend_result = get_random_rows(target_table, category, contentid)
 
+        # 6. 응답 생성
         json_output = {
             "result": json.loads(df_detail.to_json(orient='records', force_ascii=False)),
+            "is_liked": is_liked,
             "recommend": recommend_result
         }
 
         return JSONResponse(content=json_output)
 
+    except HTTPException as he:
+        raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error occurred: {str(e)}")
