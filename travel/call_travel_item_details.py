@@ -147,11 +147,45 @@ async def read_main_items(contentid: int, user_id: int):
         df_detail = df_detail.replace({'': np.nan, ' ': np.nan})
         df_detail['cat2'] = target_table
 
+        # stay_main일 경우 추가 정보 가져오기
+        if target_table == 'stay_main':
+            stay_info_query = """
+                    SELECT roomoffseasonminfee1
+                    FROM stay_info
+                    WHERE contentid = %s
+                    """
+            df_stay_info = connect_mysql(stay_info_query, params=(contentid,))
+
+            if not df_stay_info.empty:
+                # roomoffseasonminfee1 컬럼을 숫자형으로 변환
+                df_stay_info['roomoffseasonminfee1'] = pd.to_numeric(
+                    df_stay_info['roomoffseasonminfee1'], errors='coerce'
+                )
+
+                # 0과 NaN 값을 제외한 값들로 필터링
+                fees_nonzero = df_stay_info['roomoffseasonminfee1'][
+                    (df_stay_info['roomoffseasonminfee1'] != 0) & (~df_stay_info['roomoffseasonminfee1'].isna())
+                    ]
+
+                if not fees_nonzero.empty:
+                    # 최소값 구하기
+                    min_fee = fees_nonzero.min()
+                    df_detail['roomoffseasonminfee1'] = min_fee
+                else:
+                    # 모든 값이 0 또는 NaN인 경우
+                    df_detail['roomoffseasonminfee1'] = np.nan
+            else:
+                df_detail['roomoffseasonminfee1'] = np.nan
+
+
         # 3. 펫 정보 확인 및 병합
         table_name = 'pet_total'
         column_name = 'contentid'
 
         df_pet_target_table = get_info_by_id(table_name, column_name, contentid)
+
+        # df_pet 변수 초기화
+        df_pet = None
 
         if df_pet_target_table is not None and not df_pet_target_table.empty:
             pet_target_table = df_pet_target_table['target_table'].values[0]
@@ -163,7 +197,7 @@ async def read_main_items(contentid: int, user_id: int):
 
             df_pet = df_pet.replace({'': np.nan, ' ': np.nan})
 
-            df_detail = df_detail.merge(df_pet, on='contentid', how='left')
+            # df_detail = df_detail.merge(df_pet, on='contentid', how='left')
 
         # 4. 좋아요 상태 확인
         like_check_query = """
@@ -181,8 +215,15 @@ async def read_main_items(contentid: int, user_id: int):
         recommend_result = get_random_rows(target_table, category, contentid)
 
         # 6. 응답 생성
+
+        if df_pet is not None and not df_pet.empty:
+            pet_result = json.loads(df_pet.to_json(orient='records', force_ascii=False))
+        else:
+            pet_result = None
+
         json_output = {
             "result": json.loads(df_detail.to_json(orient='records', force_ascii=False)),
+            "pet": pet_result,
             "is_liked": is_liked,
             "recommend": recommend_result
         }
