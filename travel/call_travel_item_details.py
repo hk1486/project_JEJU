@@ -138,6 +138,7 @@ async def read_main_items(contentid: int):
         df_detail = connect_mysql(detail_info_query)
 
         df_detail = df_detail.replace({'': np.nan, ' ': np.nan})
+        df_detail['cat2'] = target_table
 
         # 예시로 호출
         table_name = 'pet_total'
