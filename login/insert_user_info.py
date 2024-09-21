@@ -19,7 +19,6 @@ MYSQL_DATABASE = os.getenv('MYSQL_DATABASE')
 # Pydantic 모델 정의
 class UserInfo(BaseModel):
     id: int
-    nickname: str
 
 
 # 데이터 삽입 엔드포인트
@@ -36,8 +35,8 @@ async def create_user_info(user_info: UserInfo):
         )
 
         with connection.cursor() as cursor:
-            add_user = "INSERT INTO user_info (id, nickname) VALUES (%s, %s)"
-            cursor.execute(add_user, (user_info.id, user_info.nickname))
+            add_user = "INSERT INTO user_info (id) VALUES (%s)"
+            cursor.execute(add_user, (user_info.id,))
             connection.commit()
 
         connection.close()

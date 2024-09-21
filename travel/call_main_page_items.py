@@ -44,15 +44,33 @@ def connect_mysql(query):
 # 문자열을 리스트로 변환하는 함수
 def convert_string_to_list(tag_string):
     # ast.literal_eval로 문자열을 리스트로 변환
-    try:
-        return ast.literal_eval(tag_string) if tag_string else []
-    except (ValueError, SyntaxError):
+    if not tag_string:
         return []
+    if isinstance(tag_string, list):
+        return tag_string
+    if isinstance(tag_string, str):
+        tag_string = tag_string.strip()
+        # Try to parse with json.loads
+        try:
+            return json.loads(tag_string)
+        except json.JSONDecodeError:
+            pass
+        # Try to parse with ast.literal_eval
+        try:
+            return ast.literal_eval(tag_string)
+        except (ValueError, SyntaxError):
+            pass
+        # If all else fails, assume it's a comma-separated string
+        return [tag.strip() for tag in tag_string.split(',')]
+    return []
 
 
 # 추천 함수
 def recommend_tourist_spots(user_tags, df):
+    df = df[df['tag'].notnull()]
+
     df['tag'] = df['tag'].apply(convert_string_to_list)
+    df['tag'] = df['tag'].apply(lambda x : ast.literal_eval(x))
 
     # 일치하는 태그 개수를 저장할 리스트
     df['tag_match_count'] = df['tag'].apply(lambda tags: len(set(tags) & set(user_tags)))
@@ -95,7 +113,8 @@ async def read_main_items(user_id: int):
                 FROM visit_main_fix 
                 WHERE firstimage is not null 
                 AND firstimage not in ('', ' ', 'None')
-                AND contentid is not null""")
+                AND contentid is not null
+                AND tag is not null""")
 
     content1_df = df_fix.sample(1)[['contentid', 'title', 'firstimage']]
     content2_df, content4_df = recommend_tourist_spots(user_tags, df_fix)
