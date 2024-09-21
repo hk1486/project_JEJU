@@ -99,10 +99,22 @@ def famous_tourist_spots(df, topic):
 
 # 사용자 온보딩 정보를 가져오는 함수 (예시)
 def get_user_onboarding_info(user_id):
-    # 실제로는 DB에서 해당 user_id의 온보딩 정보를 가져옴
-    # 예시로 특정 태그를 반환
-    return ['자연', '역사', '문화']
-
+    # Query the onboarding_info table to get the user's travelType
+    query = f"SELECT travelType FROM onboarding_info WHERE userId = {user_id}"
+    df = connect_mysql(query)
+    if df.empty:
+        # If no onboarding info found for this user, return an empty list or handle appropriately
+        return []
+    else:
+        # Assuming travelType is stored as a JSON string in the database
+        travelType_str = df.iloc[0]['travelType']
+        # Convert the JSON string to a Python list
+        try:
+            travelType_list = json.loads(travelType_str)
+            return travelType_list
+        except json.JSONDecodeError:
+            # Handle error if travelType is not valid JSON
+            return []
 @router.get("/main/{user_id}")
 async def read_main_items(user_id: int):
 
