@@ -115,6 +115,43 @@ def get_user_onboarding_info(user_id):
         except json.JSONDecodeError:
             # Handle error if travelType is not valid JSON
             return []
+
+# 좋아요 상태를 추가하는 함수
+def add_is_liked_column(df, user_id):
+    if df.empty:
+        df['is_liked'] = []
+        return df
+
+    content_ids = df['contentid'].tolist()
+
+    content_ids_tuple = tuple(content_ids)
+    if len(content_ids_tuple) == 1:
+        content_ids_tuple += (None,)
+
+    like_query = """
+        SELECT contentId
+        FROM likes
+        WHERE userId = %s AND contentId IN %s
+    """
+
+    try:
+        connection = pymysql.connect(
+            host=MYSQL_HOSTNAME,
+            port=MYSQL_PORT,
+            user=MYSQL_USERNAME,
+            password=MYSQL_PASSWORD,
+            database=MYSQL_DATABASE
+        )
+        df_likes = pd.read_sql(like_query, connection, params=(user_id, content_ids_tuple))
+        df['is_liked'] = df['contentid'].isin(df_likes['contentId'])
+    except Exception as e:
+        print(f"Error fetching likes: {str(e)}")
+        df['is_liked'] = False
+    finally:
+        connection.close()
+
+    return df
+
 @router.get("/main/{user_id}")
 async def read_main_items(user_id: int):
 
@@ -130,6 +167,10 @@ async def read_main_items(user_id: int):
 
     content1_df = df_fix.sample(1)[['contentid', 'title', 'firstimage']]
     content2_df, content4_df = recommend_tourist_spots(user_tags, df_fix)
+
+    # 좋아요 상태 추가
+    content2_df = add_is_liked_column(content2_df, user_id)
+    content4_df = add_is_liked_column(content4_df, user_id)
 
     df_sea = df_fix[df_fix['cat3'].isin(['해수욕장', '섬', '해안절경', '등대', '항구/포구'])]
     df_healing = df_fix[df_fix['tag'].apply(lambda x: '힐링' in x)]
@@ -179,6 +220,9 @@ async def read_main_items(user_id: int):
     df_food = pd.concat([df_restaurant, df_cafe], axis=0)
     content5_df = df_food[df_food['summary'].apply(lambda x: '뷰' in x)].sample(1)[
         ['contentid', 'title', 'cat2', 'cat3', 'firstimage', 'address', 'mapx', 'mapy']]
+
+    # 좋아요 상태 추가
+    content5_df = add_is_liked_column(content5_df, user_id)
 
     content6_df = df_fix.sort_values(['like_count', 'review_count'], ascending=[False, False]).head(50).sample(5)[['contentid', 'title', 'firstimage']]
 
