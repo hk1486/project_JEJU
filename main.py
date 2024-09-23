@@ -7,6 +7,7 @@ from login.select_user_id import router as login
 from travel.call_main_page_items import router as main_layout
 from travel.call_travel_item_details import router as details_layout
 from travel.likes import router as like_router
+from travel.main_category_items import router as category
 
 app = FastAPI()
 
@@ -20,6 +21,7 @@ app.include_router(details_layout, prefix="/jeju")
 app.include_router(receive_onboarding_info, prefix="/jeju")
 
 app.include_router(like_router, prefix="/jeju")
+app.include_router(category, prefix="/jeju")
 
 if __name__ == "__main__":
     import uvicorn
