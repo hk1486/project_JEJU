@@ -9,6 +9,7 @@ from travel.call_travel_item_details import router as details_layout
 from travel.likes import router as like_router
 from travel.main_category_items import router as category
 from docentAI.nearby_spot_title import router as docent_nearby
+from docentAI.recommend_list import router as recommend_list
 
 app = FastAPI()
 
@@ -24,6 +25,7 @@ app.include_router(receive_onboarding_info, prefix="/jeju")
 app.include_router(like_router, prefix="/jeju")
 app.include_router(category, prefix="/jeju")
 app.include_router(docent_nearby, prefix="/jeju")
+app.include_router(recommend_list, prefix="/jeju")
 
 if __name__ == "__main__":
     import uvicorn

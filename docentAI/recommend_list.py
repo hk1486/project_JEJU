@@ -42,10 +42,9 @@ async def get_user_recommendations(userId: int):
             userId, contentid, title, mapx, mapy, address, firstimage, story, recommended_at
         FROM user_recommendations
         WHERE userId = %s
-        ORDER BY contentid, recommended_at DESC;
+        ORDER BY recommended_at DESC;
     """
-
-    # userId에 해당하는 추천 목록을 recommended_at 순으로 정렬해서 가져옴
+    
     try:
         connection = connect_mysql()
         df = pd.read_sql(query, connection, params=(userId,))
