@@ -38,13 +38,12 @@ def connect_mysql():
 async def get_user_recommendations(userId: int):
     # 중복된 contentid를 제외하고 해당 유저가 추천받은 관광지를 가져오는 쿼리
     query = """
-        SELECT DISTINCT ON (contentid) 
-            userId, contentid, title, mapx, mapy, address, firstimage, story, recommended_at
+        SELECT userId, contentid, title, mapx, mapy, address, firstimage, story
         FROM user_recommendations
         WHERE userId = %s
         ORDER BY recommended_at DESC;
     """
-    
+
     try:
         connection = connect_mysql()
         df = pd.read_sql(query, connection, params=(userId,))
@@ -52,6 +51,8 @@ async def get_user_recommendations(userId: int):
 
         if df.empty:
             raise HTTPException(status_code=404, detail="No recommendations found for this user.")
+
+        df = df.drop_duplicates(['userId','contentid'], keep='first')
 
         # DataFrame을 JSON으로 변환하여 반환
         recommendations = df.to_dict(orient="records")
