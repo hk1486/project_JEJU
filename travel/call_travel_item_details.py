@@ -70,7 +70,7 @@ def get_info_by_id(table, column, search_id):
 
 
 
-def get_random_rows(target_table, category, contentid):
+def get_random_rows(target_table, category, contentid, user_id):
     recomm_query = f"""
     SELECT contentid, title, cat3, address, firstimage
     FROM {target_table}
@@ -99,7 +99,26 @@ def get_random_rows(target_table, category, contentid):
                 # 결과가 없으면 None 반환
                 json_output = {"result": None}
             else:
-                # 결과가 있으면 DataFrame을 JSON으로 변환
+                content_ids = df['contentid'].tolist()
+
+                # 좋아요 상태를 가져오는 쿼리
+                like_query = """
+                                   SELECT contentId
+                                   FROM likes
+                                   WHERE userId = %s AND contentId IN %s
+                               """
+
+                # IN 연산자를 사용하기 위해 튜플 형태로 변환
+                content_ids_tuple = tuple(content_ids)
+                if len(content_ids_tuple) == 1:
+                    content_ids_tuple += (None,)  # 단일 요소 튜플일 경우 콤마 추가
+
+                # 좋아요 상태를 가져옴
+                df_likes = pd.read_sql(like_query, connection, params=(user_id, content_ids_tuple))
+
+                # 좋아요 상태를 표시하기 위한 컬럼 추가
+                df['is_liked'] = df['contentid'].isin(df_likes['contentId'])
+
                 json_output = {
                     "result": json.loads(df.to_json(orient='records', force_ascii=False))
                 }
@@ -212,10 +231,9 @@ async def read_main_items(contentid: int, user_id: int):
 
         # 5. 추천 정보 가져오기
         category = df_detail['cat3'].values[0]
-        recommend_result = get_random_rows(target_table, category, contentid)
+        recommend_result = get_random_rows(target_table, category, contentid, user_id)
 
         # 6. 응답 생성
-
         if df_pet is not None and not df_pet.empty:
             pet_result = json.loads(df_pet.to_json(orient='records', force_ascii=False))
         else:

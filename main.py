@@ -7,6 +7,10 @@ from login.select_user_id import router as login
 from travel.call_main_page_items import router as main_layout
 from travel.call_travel_item_details import router as details_layout
 from travel.likes import router as like_router
+from travel.main_category_items import router as category
+from docentAI.nearby_spot_title import router as docent_nearby
+from docentAI.recommend_list import router as recommend_list
+from docentAI.travel_course import router as recommend_travel
 from course.router import router as course_router
 
 app = FastAPI()
@@ -21,6 +25,10 @@ app.include_router(details_layout, prefix="/jeju")
 app.include_router(receive_onboarding_info, prefix="/jeju")
 
 app.include_router(like_router, prefix="/jeju")
+app.include_router(category, prefix="/jeju")
+app.include_router(docent_nearby, prefix="/jeju")
+app.include_router(recommend_list, prefix="/jeju")
+app.include_router(recommend_travel, prefix="/jeju")
 
 app.include_router(course_router, prefix="/jeju/course")
 

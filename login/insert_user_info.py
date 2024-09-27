@@ -46,3 +46,32 @@ async def create_user_info(user_info: UserInfo):
         raise HTTPException(status_code=500, detail=str(err))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/user_info/{user_id}")
+async def delete_user_info(user_id: int):
+    try:
+        # MySQL에 직접 연결
+        connection = pymysql.connect(
+            host=MYSQL_HOSTNAME,
+            port=MYSQL_PORT,
+            user=MYSQL_USERNAME,
+            password=MYSQL_PASSWORD,
+            database=MYSQL_DATABASE
+        )
+
+        with connection.cursor() as cursor:
+            delete_user = "DELETE FROM user_info WHERE id = %s"
+            affected_rows = cursor.execute(delete_user, (user_id,))
+            connection.commit()
+
+        connection.close()
+
+        if affected_rows == 0:
+            raise HTTPException(status_code=404, detail="User ID not found.")
+
+        return {"message": "User info deleted successfully."}
+
+    except pymysql.MySQLError as err:
+        raise HTTPException(status_code=500, detail=str(err))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
