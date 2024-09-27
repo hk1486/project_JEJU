@@ -11,6 +11,7 @@ from travel.main_category_items import router as category
 from docentAI.nearby_spot_title import router as docent_nearby
 from docentAI.recommend_list import router as recommend_list
 from docentAI.travel_course import router as recommend_travel
+from course.router import router as course_router
 
 app = FastAPI()
 
@@ -28,6 +29,8 @@ app.include_router(category, prefix="/jeju")
 app.include_router(docent_nearby, prefix="/jeju")
 app.include_router(recommend_list, prefix="/jeju")
 app.include_router(recommend_travel, prefix="/jeju")
+
+app.include_router(course_router, prefix="/jeju/course")
 
 if __name__ == "__main__":
     import uvicorn
