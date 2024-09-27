@@ -20,6 +20,7 @@ MYSQL_DATABASE = os.getenv('MYSQL_DATABASE')
 # Pydantic 모델 정의
 class SearchRequest(BaseModel):
     name: str
+    sigungucode: str
 
 # 데이터베이스 연결 함수
 def get_db_connection():
@@ -37,11 +38,11 @@ def get_db_connection():
 
 # search
 @router.get("/search")
-async def search_router(name: str):
+async def search_router( name: str, sigungucode: str):
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            return search(cursor, name)
+            return search(cursor, name, sigungucode)
     except pymysql.MySQLError as err:
         print(f"Database Error: {err}")
         raise HTTPException(status_code=500, detail="Database Error")
