@@ -40,11 +40,11 @@ def get_db_connection():
 
 # search
 @router.get("/search")
-async def search_router( name: str, sigungucode: str):
+async def search_router(name: str):
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            return search(cursor, name, sigungucode)
+            return search(cursor, name)
     except pymysql.MySQLError as err:
         print(f"Database Error: {err}")
         raise HTTPException(status_code=500, detail="Database Error")
