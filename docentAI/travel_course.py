@@ -10,6 +10,9 @@ import numpy as np
 import ast
 from openai import OpenAI
 import json
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
 
 load_dotenv()
 

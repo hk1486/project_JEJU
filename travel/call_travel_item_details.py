@@ -10,6 +10,9 @@ import requests
 from copy import deepcopy
 import json
 import ast
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
 
 load_dotenv()
 

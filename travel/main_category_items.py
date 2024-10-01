@@ -5,6 +5,9 @@ import os
 import pymysql
 import pandas as pd
 import json
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
 
 load_dotenv()
 

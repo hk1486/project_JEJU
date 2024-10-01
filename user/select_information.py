@@ -5,6 +5,9 @@ import os
 import pymysql
 from typing import List, Optional
 import json
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
 
 load_dotenv()
 

@@ -3,6 +3,9 @@ from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
 import os
 import pymysql
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
 
 load_dotenv()
 

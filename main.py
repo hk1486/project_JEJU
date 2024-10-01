@@ -1,4 +1,8 @@
 from fastapi import FastAPI
+import warnings
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
 
 from login.insert_user_info import router as user_info_router
 # from travel.call_travel_items import router as culture_info_router
@@ -15,6 +19,7 @@ from course.router import router as course_router
 from user.select_information import router as my_info_router
 from user.update_information import router as update_info_router
 from user.select_like_list import router as like_list_router
+
 
 app = FastAPI()
 

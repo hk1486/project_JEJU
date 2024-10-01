@@ -4,6 +4,9 @@ from pydantic import BaseModel, ValidationError
 from typing import Union
 import os
 import pymysql
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
 
 load_dotenv()
 
