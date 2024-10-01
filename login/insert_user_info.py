@@ -47,8 +47,10 @@ async def create_user_info(user_info: UserInfo):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.delete("/user_info/{user_id}")
 async def delete_user_info(user_id: int):
+    connection = None
     try:
         # MySQL에 직접 연결
         connection = pymysql.connect(
@@ -56,22 +58,48 @@ async def delete_user_info(user_id: int):
             port=MYSQL_PORT,
             user=MYSQL_USERNAME,
             password=MYSQL_PASSWORD,
-            database=MYSQL_DATABASE
+            database=MYSQL_DATABASE,
+            autocommit=False  # 자동 커밋 비활성화
         )
 
         with connection.cursor() as cursor:
+            # 사용자 존재 여부 확인
+            check_user = "SELECT 1 FROM user_info WHERE id = %s"
+            cursor.execute(check_user, (user_id,))
+            user_exists = cursor.fetchone()
+
+            if not user_exists:
+                # 사용자 정보가 없으면 롤백 및 오류 발생
+                connection.rollback()
+                raise HTTPException(status_code=404, detail="User ID not found.")
+
+            # 사용자 정보 삭제
             delete_user = "DELETE FROM user_info WHERE id = %s"
-            affected_rows = cursor.execute(delete_user, (user_id,))
+            cursor.execute(delete_user, (user_id,))
+
+            # 사용자 존재 여부 확인
+            check_user_onboarding = "SELECT 1 FROM onboarding_info WHERE userId = %s"
+            cursor.execute(check_user_onboarding, (user_id,))
+            user_exists_onboarding = cursor.fetchone()
+
+            if user_exists_onboarding:
+                # 온보딩 정보 삭제
+                delete_onboarding = "DELETE FROM onboarding_info WHERE userId = %s"
+                cursor.execute(delete_onboarding, (user_id,))
+
+            # 모든 작업 성공 시 커밋
             connection.commit()
 
-        connection.close()
-
-        if affected_rows == 0:
-            raise HTTPException(status_code=404, detail="User ID not found.")
-
-        return {"message": "User info deleted successfully."}
+        return {"message": "User info and onboarding info deleted successfully."}
 
     except pymysql.MySQLError as err:
+        if connection:
+            connection.rollback()
         raise HTTPException(status_code=500, detail=str(err))
     except Exception as e:
+        if connection:
+            connection.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if connection and connection.open:
+            connection.close()

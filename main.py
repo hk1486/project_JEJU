@@ -12,6 +12,9 @@ from docentAI.nearby_spot_title import router as docent_nearby
 from docentAI.recommend_list import router as recommend_list
 from docentAI.travel_course import router as recommend_travel
 from course.router import router as course_router
+from user.select_information import router as my_info_router
+from user.update_information import router as update_info_router
+from user.select_like_list import router as like_list_router
 
 app = FastAPI()
 
@@ -31,6 +34,9 @@ app.include_router(recommend_list, prefix="/jeju")
 app.include_router(recommend_travel, prefix="/jeju")
 
 app.include_router(course_router, prefix="/jeju/course")
+app.include_router(my_info_router, prefix="/jeju")
+app.include_router(update_info_router, prefix="/jeju")
+app.include_router(like_list_router, prefix="/jeju")
 
 if __name__ == "__main__":
     import uvicorn

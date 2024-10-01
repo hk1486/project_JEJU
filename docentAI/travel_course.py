@@ -39,8 +39,8 @@ class RecommendTravelRequest(BaseModel):
     mapy: float = None  # 사용자가 '내 위치'를 선택한 경우 필요
 
 # 연령대 및 성별 매핑
-AGE_MAPPING = {1: '10대', 2: '20~24세', 3: '25~30세', 4: '31~35세', 5: '36세 이상', 6: 'Unknown'}
-GENDER_MAPPING = {1: '남자', 2: '여자', 3: 'Unknown'}
+AGE_MAPPING = {0: '10대', 1: '20~24세', 2: '25~30세', 3: '31~35세', 4: '36세 이상', 5: 'Unknown'}
+GENDER_MAPPING = {0: '남자', 1: '여자', 2: 'Unknown'}
 
 def call_csv():
     df = pd.read_csv('main_total_docent.csv')
