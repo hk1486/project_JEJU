@@ -8,8 +8,7 @@ import pandas as pd
 from math import radians, cos, sin, asin, sqrt
 from datetime import datetime
 import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
+warnings.filterwarnings('ignore')
 
 load_dotenv()
 

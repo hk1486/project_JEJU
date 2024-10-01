@@ -4,8 +4,7 @@ from pydantic import BaseModel
 import os
 import pymysql
 import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
+warnings.filterwarnings('ignore')
 
 load_dotenv()
 

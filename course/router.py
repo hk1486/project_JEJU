@@ -4,6 +4,8 @@ from pydantic import BaseModel
 import os
 import pymysql
 from course.search import search
+import warnings
+warnings.filterwarnings('ignore')
 
 load_dotenv()
 

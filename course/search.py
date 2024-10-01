@@ -1,4 +1,6 @@
 from typing import List, Dict, Any
+import warnings
+warnings.filterwarnings('ignore')
 
 TARGET_TABLE = [
     'visit_main_fix',

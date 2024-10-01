@@ -1,8 +1,6 @@
 from fastapi import FastAPI
 import warnings
-
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
+warnings.filterwarnings('ignore')
 
 from login.insert_user_info import router as user_info_router
 # from travel.call_travel_items import router as culture_info_router

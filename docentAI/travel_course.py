@@ -11,8 +11,7 @@ import ast
 from openai import OpenAI
 import json
 import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
+warnings.filterwarnings('ignore')
 
 load_dotenv()
 
