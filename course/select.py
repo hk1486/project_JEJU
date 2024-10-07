@@ -32,6 +32,7 @@ class CourseInfo(BaseModel):
     courseId: int
     courseName: str
     contentCount: int
+    dateCount: int
     firstimage: str  # Optional[str]에서 str로 변경하여 빈 문자열 반환
 
 @router.get("/select", response_model=List[CourseInfo], status_code=status.HTTP_200_OK)
@@ -66,7 +67,17 @@ async def get_courses(userId: int = Query(..., description="User ID")):
                 count_result = cursor.fetchone()
                 content_count = count_result['contentCount'] if count_result else 0
 
-                # 3. 해당 코스의 첫 번째 contentId 가져오기
+                # 3. 해당 코스가 며칠인지 조회
+                date_count_query = """
+                SELECT COUNT(DISTINCT planning_date) as dateCount
+                FROM course_plans
+                WHERE courseId = %s
+                """
+                cursor.execute(date_count_query, (course_id,))
+                datecount_result = cursor.fetchone()
+                date_count = datecount_result['dateCount'] if datecount_result else 0
+
+                # 4. 해당 코스의 첫 번째 contentId 가져오기
                 first_content_query = """
                 SELECT contentId
                 FROM course_plans
@@ -110,6 +121,7 @@ async def get_courses(userId: int = Query(..., description="User ID")):
                     courseId=course_id,
                     courseName=course_name,
                     contentCount=content_count,
+                    dateCount=date_count,
                     firstimage=first_image
                 )
                 course_list.append(course_info)
