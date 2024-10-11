@@ -48,6 +48,24 @@ async def add_to_course(request: AddToCourseRequest):
             if not course:
                 raise HTTPException(status_code=404, detail="Course not found or does not belong to the user.")
 
+            # 코스 이름 가져오기
+            course_title = course['courseName']
+
+            # 1-1. 중복된 contentId가 있는지 확인
+            existing_content_query = """
+                        SELECT contentId FROM course_plans
+                        WHERE courseId = %s AND contentId IS NOT NULL
+                        """
+            cursor.execute(existing_content_query, (request.courseId,))
+            existing_contents = cursor.fetchall()
+            existing_content_ids = set([row['contentId'] for row in existing_contents])
+
+            # 요청된 contentIds와 기존 contentIds의 교집합 찾기
+            duplicate_content_ids = existing_content_ids.intersection(set(request.contentIds))
+            if duplicate_content_ids:
+                # 중복된 경우 메시지에 '중복'이라고 반환
+                return {"message": "중복"}
+
             # 2. 해당 코스의 날짜 목록 가져오기 (planning_date 기준으로 오름차순)
             get_course_dates_query = """
             SELECT DISTINCT planning_date
@@ -180,7 +198,7 @@ async def add_to_course(request: AddToCourseRequest):
             # 8. 트랜잭션 커밋
             connection.commit()
 
-            return {"message": "Content IDs added to course successfully."}
+            return {"message": f"{course_title}"}
 
     except pymysql.MySQLError as err:
         if connection:

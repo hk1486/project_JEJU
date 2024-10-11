@@ -20,6 +20,9 @@ from user.select_like_list import router as like_list_router
 from course.create import router as create_course_router
 from course.select import router as select_course_router
 from course.insert import router as insert_course_router
+from course.detail import router as detail_course_router
+from course.update import router as update_course_info_router
+from course.update_course_sequence import router as update_course_plan_router
 
 
 app = FastAPI()
@@ -46,6 +49,9 @@ app.include_router(like_list_router, prefix="/jeju")
 app.include_router(create_course_router, prefix="/jeju/course")
 app.include_router(select_course_router, prefix="/jeju/course")
 app.include_router(insert_course_router, prefix="/jeju/course")
+app.include_router(detail_course_router, prefix="/jeju/course")
+app.include_router(update_course_info_router, prefix="/jeju/course")
+app.include_router(update_course_plan_router, prefix="/jeju/course")
 
 if __name__ == "__main__":
     import uvicorn

@@ -44,6 +44,18 @@ class CreateCourseResponse(BaseModel):
 async def create_course(request: CreateCourseRequest):
     connection = get_db_connection()
     try:
+        # 0. 요청된 contentId 목록에서 중복 확인
+        all_content_ids = []
+        for plan_item in request.plan:
+            all_content_ids.extend(plan_item.contentid_list)
+        if len(all_content_ids) != len(set(all_content_ids)):
+            # 중복된 contentId가 있는 경우
+            return {
+                "courseId": -1,
+                "courseName": "None",
+                "message": "중복"
+            }
+
         with connection.cursor() as cursor:
             # 1. 해당 사용자의 기존 코스 수 확인
             count_query = """
