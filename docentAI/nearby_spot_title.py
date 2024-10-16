@@ -118,7 +118,7 @@ async def get_recommendation(input_data: RecommendationInput):
         with connection.cursor() as cursor:
             cursor.execute(insert_query, insert_params)
         connection.commit()
-        # print(f"Inserted recommendation: User {userId}, ContentID {contentid}")
+        print(f"Inserted recommendation: User {userId}, ContentID {contentid}")
     except Exception as e:
         print(f"Error inserting recommendation: {str(e)}")
         # 여기서 에러를 반환하거나, 실패했을 때의 처리 방안을 결정할 수 있습니다.
