@@ -50,6 +50,7 @@ class GetCourseDetailsResponse(BaseModel):
     courseName: str
     totalDays: int
     totalItems: int
+    totalBudget: int
     plans: List[DatePlan]
 
 @router.post("/details", response_model=GetCourseDetailsResponse, status_code=status.HTTP_200_OK)
@@ -91,6 +92,9 @@ async def get_course_details(request: GetCourseDetailsRequest):
             unique_content_ids = set(plan['contentId'] for plan in plans if plan['contentId'])
             total_items = len(unique_content_ids)
 
+            # 총 예산 계산을 위한 변수
+            total_budget = 0
+
             # 3. 날짜별 콘텐츠 리스트 구성
             date_plans = []
             for date in unique_dates:
@@ -122,7 +126,7 @@ async def get_course_details(request: GetCourseDetailsRequest):
 
                     # 상세 정보 조회
                     detail_query = f"""
-                    SELECT contentid, firstimage, title, cat3, address, mapx, mapy
+                    SELECT contentid, firstimage, title, cat3, address, mapx, mapy, COALESCE(numprice, 0) as numprice
                     FROM {target_table}
                     WHERE contentid = %s
                     """
@@ -130,6 +134,9 @@ async def get_course_details(request: GetCourseDetailsRequest):
                     detail = cursor.fetchone()
                     if not detail:
                         continue  # 상세 정보가 없으면 건너뜀
+
+                    # 총 예산에 현재 아이템의 가격 추가
+                    total_budget += detail['numprice']
 
                     # TouristItem 객체 생성
                     tourist_item = TouristItem(
@@ -150,11 +157,14 @@ async def get_course_details(request: GetCourseDetailsRequest):
                 )
                 date_plans.append(date_plan)
 
+            print(total_budget)
+
             # 5. 응답 반환
             response = GetCourseDetailsResponse(
                 courseName=course_name,
                 totalDays=total_days,
                 totalItems=total_items,
+                totalBudget=total_budget,
                 plans=date_plans
             )
             return response
